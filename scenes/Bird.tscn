@@ -14,7 +14,7 @@ animations = [ {
 } ]
 
 [node name="Bird" type="RigidBody2D"]
-position = Vector2( 65.3484, 95.0966 )
+position = Vector2( 36, 95.097 )
 gravity_scale = 5.0
 script = ExtResource( 1 )
 __meta__ = {
