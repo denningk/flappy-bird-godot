@@ -2,7 +2,7 @@
 
 extends Camera2D
 
-onready var bird = get_tree().get_root().get_child(0).get_node("Bird")
+onready var bird = Utils.get_main_node().get_node("Bird")
 
 func _ready():
 	pass
