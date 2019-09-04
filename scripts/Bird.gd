@@ -4,9 +4,8 @@ extends RigidBody2D
 
 func _ready():
 	linear_velocity = Vector2(50, linear_velocity.y)
-	pass
 
-func _integrate_forces(delta):
+func _integrate_forces(_delta):
 	if rotation_degrees < -30:
 		rotation = deg2rad(-30)
 		angular_velocity = 0
