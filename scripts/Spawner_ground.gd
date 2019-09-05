@@ -18,7 +18,7 @@ func spawn_ground():
 	var new_ground = scn_ground.instance()
 	new_ground.position = position
 	new_ground.connect("tree_exited", self, "spawn_and_move")
-	s$container.call_deferred("add_child", new_ground)
+	$container.call_deferred("add_child", new_ground)
 
 func go_next_pos():
 	position += Vector2(GROUND_WIDTH, 0)
