@@ -11,6 +11,7 @@ enum {STATE_FLYING, STATE_FLAPPING, STATE_HIT, STATE_GROUNDED}
 signal state_changed
 
 func _ready():
+	add_to_group(Game.GROUP_BIRDS)
 	connect("body_entered", self, "_on_body_enter")
 	
 func _integrate_forces(_delta):
