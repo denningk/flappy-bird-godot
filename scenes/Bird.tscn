@@ -20,7 +20,7 @@ radius = 6.5
 resource_name = "flap"
 length = 0.6
 tracks/0/type = "value"
-tracks/0/path = NodePath("Anime_sprite:frame")
+tracks/0/path = NodePath("Anim_sprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -37,7 +37,7 @@ resource_name = "flying"
 length = 1.5
 loop = true
 tracks/0/type = "value"
-tracks/0/path = NodePath("Anime_sprite:position")
+tracks/0/path = NodePath("Anim_sprite:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -49,7 +49,7 @@ tracks/0/keys = {
 "values": [ Vector2( 0, 0 ), Vector2( 0, 6 ) ]
 }
 tracks/1/type = "value"
-tracks/1/path = NodePath("Anime_sprite:frame")
+tracks/1/path = NodePath("Anim_sprite:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/imported = false
@@ -65,7 +65,7 @@ tracks/1/keys = {
 resource_name = "idle"
 length = 0.1
 tracks/0/type = "value"
-tracks/0/path = NodePath("Anime_sprite:frame")
+tracks/0/path = NodePath("Anim_sprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -77,7 +77,7 @@ tracks/0/keys = {
 "values": [ 0 ]
 }
 tracks/1/type = "value"
-tracks/1/path = NodePath("Anime_sprite:position")
+tracks/1/path = NodePath("Anim_sprite:position")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/imported = false
@@ -90,15 +90,17 @@ tracks/1/keys = {
 }
 
 [node name="Bird" type="RigidBody2D"]
-position = Vector2( 36, 95.097 )
+position = Vector2( 36, 120 )
 gravity_scale = 5.0
+contacts_reported = 1
+contact_monitor = true
 linear_damp = 0.0
 script = ExtResource( 1 )
 __meta__ = {
 "_edit_group_": true
 }
 
-[node name="Anime_sprite" type="AnimatedSprite" parent="."]
+[node name="Anim_sprite" type="AnimatedSprite" parent="."]
 frames = SubResource( 1 )
 frame = 1
 

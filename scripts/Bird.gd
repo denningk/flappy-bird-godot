@@ -8,15 +8,21 @@ var speed = 50
 
 enum {STATE_FLYING, STATE_FLAPPING, STATE_HIT, STATE_GROUNDED}
 
+signal state_changed
+
 func _ready():
-	pass
+	connect("body_entered", self, "_on_body_enter")
 	
 func _integrate_forces(_delta):
 	state.update(_delta)
 
 func _input(event):
 	state.input(event)
-	
+
+func _on_body_enter(other_body):
+	if state.has_method("on_body_enter"):
+		state.on_body_enter(other_body)
+
 func set_state(new_state):
 	state.exit()
 	
@@ -28,6 +34,8 @@ func set_state(new_state):
 		state = HitState.new(self)
 	elif new_state == STATE_GROUNDED:
 		state = GroundedState.new(self)
+		
+	emit_signal("state_changed", self)
 
 func get_state():
 	if state is FlyingState:
@@ -38,6 +46,7 @@ func get_state():
 		return STATE_HIT
 	elif state is GroundedState:
 		return STATE_GROUNDED
+		
 # class FlyingState ------------------------
 
 class FlyingState:
@@ -51,7 +60,7 @@ class FlyingState:
 		
 		prev_gravity_scale = bird.gravity_scale
 		bird.gravity_scale = 0
-		
+	
 	func update(_delta):
 		pass
 	
@@ -60,6 +69,8 @@ class FlyingState:
 	
 	func exit():
 		bird.gravity_scale = prev_gravity_scale
+		bird.get_node("Anim").stop()
+		bird.get_node("Anim_sprite").position = Vector2(0,0)
 
 # class FlappingState ------------------------
 
@@ -70,6 +81,7 @@ class FlappingState:
 		self.bird = bird
 		
 		bird.linear_velocity = Vector2(bird.speed, bird.linear_velocity.y)
+		flap()
 		
 	func update(_delta):
 		if bird.rotation_degrees < -30:
@@ -83,6 +95,12 @@ class FlappingState:
 		if event.is_action_pressed("flap"):
 			flap()
 	
+	func on_body_enter(other_body):
+		if other_body.is_in_group(Game.GROUP_PIPES):
+			bird.set_state(bird.STATE_HIT)
+		elif other_body.is_in_group(Game.GROUP_GROUNDS):
+			bird.set_state(bird.STATE_GROUNDED)
+	
 	func flap():
 		bird.linear_velocity = Vector2(bird.linear_velocity.x, -150)
 		bird.angular_velocity = -3
@@ -90,7 +108,7 @@ class FlappingState:
 	
 	func exit():
 		pass
-
+	
 # class HitState ------------------------
 
 class HitState:
@@ -98,12 +116,21 @@ class HitState:
 	
 	func _init(bird):
 		self.bird = bird
-	
+		bird.linear_velocity = Vector2(0,0)
+		bird.angular_velocity = 2
+		
+		var other_body = bird.get_colliding_bodies()[0]
+		bird.add_collision_exception_with(other_body)
+		
 	func update(_delta):
 		pass
 	
 	func input(event):
 		pass
+	
+	func on_body_enter(other_body):
+		if other_body.is_in_group(Game.GROUP_GROUNDS):
+			bird.set_state(bird.STATE_GROUNDED)
 	
 	func exit():
 		pass
@@ -115,6 +142,8 @@ class GroundedState:
 	
 	func _init(bird):
 		self.bird = bird
+		bird.linear_velocity = Vector2(0,0)
+		bird.angular_velocity = 0
 	
 	func update(_delta):
 		pass
