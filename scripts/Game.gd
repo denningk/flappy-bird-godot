@@ -10,6 +10,12 @@ var score_current : int = 0 setget _set_score_current
 signal score_best_chaged
 signal score_current_changed
 
+func _ready():
+	StageManager.connect("stage_changed", self, "_on_stage_changed")
+
+func _on_stage_changed():
+	self.score_current = 0
+
 func _set_score_best(new_value):
 	score_best = new_value
 	emit_signal("score_best_chaged")
