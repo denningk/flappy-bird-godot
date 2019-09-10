@@ -48,7 +48,7 @@ const SPRITE_NUMBERS : Array = [
 
 func _ready() -> void:
 	Game.connect(\"score_current_changed\", self, \"_on_score_current_changed\")
-	set_number(Game.score_best)
+	set_number(Game.score_current)
 	
 func _on_score_current_changed() -> void:
 	set_number(Game.score_current)
