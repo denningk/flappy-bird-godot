@@ -49,7 +49,7 @@ func spawn_pipe():
 func go_next_pos():
 	randomize()
 	
-	var next_pos = position
+	var next_pos = Vector2(position.x, position.y)
 	next_pos.x += PIPE_WIDTH/2 + OFFSET_X + PIPE_WIDTH/2
 	next_pos.y = rand_range(0+OFFSET_Y, get_viewport_rect().size.y - GROUND_HEIGHT - OFFSET_Y)
 	position = next_pos

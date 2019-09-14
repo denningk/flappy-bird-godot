@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=2]
+[gd_scene load_steps=25 format=2]
 
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Bird.tscn" type="PackedScene" id=2]
@@ -10,10 +10,11 @@
 [ext_resource path="res://sprites/label_game_over.png" type="Texture" id=8]
 [ext_resource path="res://sprites/panel_score.png" type="Texture" id=9]
 [ext_resource path="res://sprites/number_middle_0.png" type="Texture" id=10]
-[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=11]
-[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=12]
-[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=13]
-[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=14]
+[ext_resource path="res://sprites/label_new.png" type="Texture" id=11]
+[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=12]
+[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=13]
+[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=14]
+[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=15]
 
 [sub_resource type="GDScript" id=1]
 resource_name = "Btn_instructions"
@@ -49,10 +50,18 @@ const SPRITE_NUMBERS : Array = [
 
 func _ready() -> void:
 	Game.connect(\"score_current_changed\", self, \"_on_score_current_changed\")
+	var bird = Utils.get_main_node().get_node(\"Bird\")
+	if bird:
+		bird.connect(\"state_changed\", self, \"_on_bird_state_changed\")
+	
 	set_number(Game.score_current)
 	
 func _on_score_current_changed() -> void:
 	set_number(Game.score_current)
+
+func _on_bird_state_changed(bird):
+	if bird.get_state() == bird.STATE_GROUNDED:
+		hide()
 
 func set_number(number) -> void:
 	for child in get_children():
@@ -96,6 +105,8 @@ const SPRITE_NUMBERS : Array = [
 	preload(\"res://sprites/number_middle_9.png\")	
 ]
 
+signal counting_finished
+
 func _ready():
 	var anim = Utils.get_main_node().get_node(\"Hud/CntrGameover/Anim\")
 	yield(anim, \"animation_finished\")
@@ -113,6 +124,9 @@ func count_to_score():
 		set_number(int(lerp(0, Game.score_current, percent)))
 		
 		yield(get_tree(), \"idle_frame\")
+	
+	Game.score_best = Game.score_current
+	emit_signal(\"counting_finished\")
 
 func set_number(number: int) -> void:
 	for child in get_children():
@@ -124,12 +138,68 @@ func set_number(number: int) -> void:
 		add_child(texture_frame)
 "
 
+[sub_resource type="GDScript" id=8]
+resource_name = "HBoxScoreBest"
+script/source = "extends HBoxContainer
+
+const SPRITE_NUMBERS : Array = [
+	preload(\"res://sprites/number_middle_0.png\"),
+	preload(\"res://sprites/number_middle_1.png\"),
+	preload(\"res://sprites/number_middle_2.png\"),
+	preload(\"res://sprites/number_middle_3.png\"),
+	preload(\"res://sprites/number_middle_4.png\"),
+	preload(\"res://sprites/number_middle_5.png\"),
+	preload(\"res://sprites/number_middle_6.png\"),
+	preload(\"res://sprites/number_middle_7.png\"),
+	preload(\"res://sprites/number_middle_8.png\"),
+	preload(\"res://sprites/number_middle_9.png\")	
+]
+
+func _ready():
+	Game.connect(\"score_best_changed\", self, \"_on_score_best_changed\")
+	set_number(Game.score_best)
+	
+func _on_score_best_changed():
+	set_number(Game.score_best)
+
+func set_number(number: int) -> void:
+	for child in get_children():
+		child.queue_free()
+	
+	for digit in Utils.get_digits(number):
+		var texture_frame : TextureRect = TextureRect.new()
+		texture_frame.texture = SPRITE_NUMBERS[digit]
+		add_child(texture_frame)
+"
+
+[sub_resource type="GDScript" id=9]
+resource_name = "TexNew"
+script/source = "extends TextureRect
+
+func _ready():
+	hide()
+	Game.connect(\"score_best_changed\", self, \"show\")"
+
+[sub_resource type="GDScript" id=7]
+resource_name = "HBoxButtons"
+script/source = "extends HBoxContainer
+
+func _ready():
+	hide()
+	
+	var hbox_score_last = Utils.get_main_node().find_node(\"HBoxScoreLast\")
+	if hbox_score_last:
+		hbox_score_last.connect(\"counting_finished\", self, \"show\")"
+
 [sub_resource type="GDScript" id=4]
 resource_name = "BtnPlay"
 script/source = "extends TextureButton
 
 func _ready():
 	connect(\"pressed\", self, \"_on_pressed\")
+	var hbox_score_last = Utils.get_main_node().find_node(\"HBoxScoreLast\")
+	if hbox_score_last:
+		hbox_score_last.connect(\"counting_finished\", self, \"grab_focus\")
 
 func _on_pressed():
 	StageManager.change_staage(StageManager.STAGE_GAME)
@@ -234,6 +304,7 @@ margin_bottom = 18.0
 texture = ExtResource( 7 )
 
 [node name="CntrGameover" type="Container" parent="Hud"]
+editor/display_folded = true
 margin_right = 144.0
 margin_bottom = 256.0
 script = SubResource( 3 )
@@ -253,6 +324,7 @@ margin_bottom = 147.0
 texture = ExtResource( 9 )
 
 [node name="HBoxScoreLast" type="HBoxContainer" parent="Hud/CntrGameover/TxtPanelScore"]
+editor/display_folded = true
 margin_left = 62.0
 margin_top = 17.0
 margin_right = 102.0
@@ -267,28 +339,53 @@ margin_right = 40.0
 margin_bottom = 10.0
 texture = ExtResource( 10 )
 
-[node name="HBoxButtons" type="HBoxContainer" parent="Hud/CntrGameover"]
+[node name="HBoxScoreBest" type="HBoxContainer" parent="Hud/CntrGameover/TxtPanelScore"]
 editor/display_folded = true
+margin_left = 62.0
+margin_top = 37.0
+margin_right = 102.0
+margin_bottom = 47.0
+custom_constants/separation = 1
+alignment = 2
+script = SubResource( 8 )
+
+[node name="TexZero" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore/HBoxScoreBest"]
+margin_left = 33.0
+margin_right = 40.0
+margin_bottom = 10.0
+texture = ExtResource( 10 )
+
+[node name="TexNew" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore"]
+margin_left = 67.0
+margin_top = 29.0
+margin_right = 83.0
+margin_bottom = 36.0
+texture = ExtResource( 11 )
+script = SubResource( 9 )
+
+[node name="HBoxButtons" type="HBoxContainer" parent="Hud/CntrGameover"]
+visible = false
 margin_left = 16.0
 margin_top = 160.0
 margin_right = 129.0
 margin_bottom = 189.0
 custom_constants/separation = 9
 alignment = 1
+script = SubResource( 7 )
 
 [node name="BtnPlay" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_right = 52.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 11 )
-texture_pressed = ExtResource( 12 )
+texture_normal = ExtResource( 12 )
+texture_pressed = ExtResource( 13 )
 script = SubResource( 4 )
 
 [node name="BtnScores" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_left = 61.0
 margin_right = 113.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 13 )
-texture_pressed = ExtResource( 14 )
+texture_normal = ExtResource( 14 )
+texture_pressed = ExtResource( 15 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover"]
 playback_speed = 1.5
