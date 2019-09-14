@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=32 format=2]
 
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Bird.tscn" type="PackedScene" id=2]
@@ -11,10 +11,14 @@
 [ext_resource path="res://sprites/panel_score.png" type="Texture" id=9]
 [ext_resource path="res://sprites/number_middle_0.png" type="Texture" id=10]
 [ext_resource path="res://sprites/label_new.png" type="Texture" id=11]
-[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=12]
-[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=13]
-[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=14]
-[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=15]
+[ext_resource path="res://sprites/medal_bronze.png" type="Texture" id=12]
+[ext_resource path="res://sprites/spark_0.png" type="Texture" id=13]
+[ext_resource path="res://sprites/spark_1.png" type="Texture" id=14]
+[ext_resource path="res://sprites/spark_2.png" type="Texture" id=15]
+[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=16]
+[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=17]
+[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=18]
+[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=19]
 
 [sub_resource type="GDScript" id=1]
 resource_name = "Btn_instructions"
@@ -180,6 +184,49 @@ func _ready():
 	hide()
 	Game.connect(\"score_best_changed\", self, \"show\")"
 
+[sub_resource type="GDScript" id=10]
+resource_name = "TexMedal"
+script/source = "extends TextureRect
+
+const spr_medal_bronze = preload(\"res://sprites/medal_bronze.png\")
+const spr_medal_silver = preload(\"res://sprites/medal_silver.png\")
+const spr_medal_gold = preload(\"res://sprites/medal_gold.png\")
+const spr_medal_platinum = preload(\"res://sprites/medal_platinum.png\")
+
+
+func _ready():
+	hide()
+	
+	var hbox_score_last = Utils.get_main_node().find_node(\"HBoxScoreLast\")
+	if hbox_score_last:
+		hbox_score_last.connect(\"counting_finished\", self, \"show_medal\")
+
+func show_medal():
+	texture = null
+	
+	if Game.score_current >= Game.MEDAL_PLATINUM:
+		texture = spr_medal_platinum
+	elif Game.score_current >= Game.MEDAL_GOLD:
+		texture = spr_medal_gold
+	elif Game.score_current >= Game.MEDAL_SILVER:
+		texture = spr_medal_silver
+	elif Game.score_current >= Game.MEDAL_BRONZE:
+		texture = spr_medal_bronze
+	
+	if texture != null:
+		show()"
+
+[sub_resource type="SpriteFrames" id=11]
+animations = [ {
+"frames": [ ExtResource( 13 ), ExtResource( 14 ), ExtResource( 15 ) ],
+"loop": true,
+"name": "default",
+"speed": 5.0
+} ]
+
+[sub_resource type="Animation" id=12]
+resource_name = "shine"
+
 [sub_resource type="GDScript" id=7]
 resource_name = "HBoxButtons"
 script/source = "extends HBoxContainer
@@ -304,7 +351,6 @@ margin_bottom = 18.0
 texture = ExtResource( 7 )
 
 [node name="CntrGameover" type="Container" parent="Hud"]
-editor/display_folded = true
 margin_right = 144.0
 margin_bottom = 256.0
 script = SubResource( 3 )
@@ -363,7 +409,22 @@ margin_bottom = 36.0
 texture = ExtResource( 11 )
 script = SubResource( 9 )
 
+[node name="TexMedal" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore"]
+margin_left = 13.0
+margin_top = 21.0
+margin_right = 35.0
+margin_bottom = 43.0
+texture = ExtResource( 12 )
+script = SubResource( 10 )
+
+[node name="SprSparkle" type="AnimatedSprite" parent="Hud/CntrGameover/TxtPanelScore/TexMedal"]
+frames = SubResource( 11 )
+
+[node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover/TxtPanelScore/TexMedal/SprSparkle"]
+anims/shine = SubResource( 12 )
+
 [node name="HBoxButtons" type="HBoxContainer" parent="Hud/CntrGameover"]
+editor/display_folded = true
 visible = false
 margin_left = 16.0
 margin_top = 160.0
@@ -376,16 +437,16 @@ script = SubResource( 7 )
 [node name="BtnPlay" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_right = 52.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 12 )
-texture_pressed = ExtResource( 13 )
+texture_normal = ExtResource( 16 )
+texture_pressed = ExtResource( 17 )
 script = SubResource( 4 )
 
 [node name="BtnScores" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_left = 61.0
 margin_right = 113.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 14 )
-texture_pressed = ExtResource( 15 )
+texture_normal = ExtResource( 18 )
+texture_pressed = ExtResource( 19 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover"]
 playback_speed = 1.5
