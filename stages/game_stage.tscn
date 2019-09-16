@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=2]
+[gd_scene load_steps=33 format=2]
 
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Bird.tscn" type="PackedScene" id=2]
@@ -15,10 +15,11 @@
 [ext_resource path="res://sprites/spark_0.png" type="Texture" id=13]
 [ext_resource path="res://sprites/spark_1.png" type="Texture" id=14]
 [ext_resource path="res://sprites/spark_2.png" type="Texture" id=15]
-[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=16]
-[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=17]
-[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=18]
-[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=19]
+[ext_resource path="res://scripts/SprSparkle.gd" type="Script" id=16]
+[ext_resource path="res://sprites/button_play_normal.png" type="Texture" id=17]
+[ext_resource path="res://sprites/button_play_pressed.png" type="Texture" id=18]
+[ext_resource path="res://sprites/button_score_normal.png" type="Texture" id=19]
+[ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=20]
 
 [sub_resource type="GDScript" id=1]
 resource_name = "Btn_instructions"
@@ -73,6 +74,7 @@ func set_number(number) -> void:
 	
 	for digit in Utils.get_digits(number):
 		var texture_frame : TextureRect = TextureRect.new()
+		texture_frame.mouse_filter = MOUSE_FILTER_IGNORE
 		texture_frame.texture = SPRITE_NUMBERS[digit]
 		add_child(texture_frame)
 "
@@ -92,7 +94,7 @@ func _on_bird_state_changed(bird):
 	if bird.get_state() == bird.STATE_GROUNDED:
 		$Anim.play(\"show\")"
 
-[sub_resource type="GDScript" id=6]
+[sub_resource type="GDScript" id=4]
 resource_name = "HBoxScoreLast"
 script/source = "extends HBoxContainer
 
@@ -142,7 +144,7 @@ func set_number(number: int) -> void:
 		add_child(texture_frame)
 "
 
-[sub_resource type="GDScript" id=8]
+[sub_resource type="GDScript" id=5]
 resource_name = "HBoxScoreBest"
 script/source = "extends HBoxContainer
 
@@ -176,7 +178,7 @@ func set_number(number: int) -> void:
 		add_child(texture_frame)
 "
 
-[sub_resource type="GDScript" id=9]
+[sub_resource type="GDScript" id=6]
 resource_name = "TexNew"
 script/source = "extends TextureRect
 
@@ -184,7 +186,7 @@ func _ready():
 	hide()
 	Game.connect(\"score_best_changed\", self, \"show\")"
 
-[sub_resource type="GDScript" id=10]
+[sub_resource type="GDScript" id=7]
 resource_name = "TexMedal"
 script/source = "extends TextureRect
 
@@ -193,6 +195,7 @@ const spr_medal_silver = preload(\"res://sprites/medal_silver.png\")
 const spr_medal_gold = preload(\"res://sprites/medal_gold.png\")
 const spr_medal_platinum = preload(\"res://sprites/medal_platinum.png\")
 
+signal shown
 
 func _ready():
 	hide()
@@ -214,9 +217,10 @@ func show_medal():
 		texture = spr_medal_bronze
 	
 	if texture != null:
-		show()"
+		show()
+		emit_signal(\"shown\")"
 
-[sub_resource type="SpriteFrames" id=11]
+[sub_resource type="SpriteFrames" id=8]
 animations = [ {
 "frames": [ ExtResource( 13 ), ExtResource( 14 ), ExtResource( 15 ) ],
 "loop": true,
@@ -224,11 +228,38 @@ animations = [ {
 "speed": 5.0
 } ]
 
-[sub_resource type="Animation" id=12]
+[sub_resource type="Animation" id=9]
 resource_name = "shine"
+length = 0.5
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1 ),
+"update": 1,
+"values": [ 0, 1, 2, 1, 0 ]
+}
+tracks/1/type = "method"
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0.5 ),
+"transitions": PoolRealArray( 1 ),
+"values": [ {
+"args": [  ],
+"method": "to_random_pos"
+} ]
+}
 
-[sub_resource type="GDScript" id=7]
-resource_name = "HBoxButtons"
+[sub_resource type="GDScript" id=10]
 script/source = "extends HBoxContainer
 
 func _ready():
@@ -238,8 +269,7 @@ func _ready():
 	if hbox_score_last:
 		hbox_score_last.connect(\"counting_finished\", self, \"show\")"
 
-[sub_resource type="GDScript" id=4]
-resource_name = "BtnPlay"
+[sub_resource type="GDScript" id=11]
 script/source = "extends TextureButton
 
 func _ready():
@@ -252,8 +282,7 @@ func _on_pressed():
 	StageManager.change_staage(StageManager.STAGE_GAME)
 "
 
-[sub_resource type="Animation" id=5]
-resource_name = "show"
+[sub_resource type="Animation" id=12]
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:visible")
 tracks/0/interp = 1
@@ -336,10 +365,10 @@ margin_bottom = 153.0
 texture = ExtResource( 6 )
 
 [node name="Hbox_score" type="HBoxContainer" parent="Hud"]
-editor/display_folded = true
 margin_top = 10.0
 margin_right = 144.0
 margin_bottom = 28.0
+mouse_filter = 2
 custom_constants/separation = 2
 alignment = 1
 script = SubResource( 2 )
@@ -348,6 +377,7 @@ script = SubResource( 2 )
 margin_left = 66.0
 margin_right = 78.0
 margin_bottom = 18.0
+mouse_filter = 2
 texture = ExtResource( 7 )
 
 [node name="CntrGameover" type="Container" parent="Hud"]
@@ -377,7 +407,7 @@ margin_right = 102.0
 margin_bottom = 27.0
 custom_constants/separation = 1
 alignment = 2
-script = SubResource( 6 )
+script = SubResource( 4 )
 
 [node name="TexZero" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore/HBoxScoreLast"]
 margin_left = 33.0
@@ -393,7 +423,7 @@ margin_right = 102.0
 margin_bottom = 47.0
 custom_constants/separation = 1
 alignment = 2
-script = SubResource( 8 )
+script = SubResource( 5 )
 
 [node name="TexZero" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore/HBoxScoreBest"]
 margin_left = 33.0
@@ -407,7 +437,7 @@ margin_top = 29.0
 margin_right = 83.0
 margin_bottom = 36.0
 texture = ExtResource( 11 )
-script = SubResource( 9 )
+script = SubResource( 6 )
 
 [node name="TexMedal" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore"]
 margin_left = 13.0
@@ -415,13 +445,15 @@ margin_top = 21.0
 margin_right = 35.0
 margin_bottom = 43.0
 texture = ExtResource( 12 )
-script = SubResource( 10 )
+script = SubResource( 7 )
 
 [node name="SprSparkle" type="AnimatedSprite" parent="Hud/CntrGameover/TxtPanelScore/TexMedal"]
-frames = SubResource( 11 )
+frames = SubResource( 8 )
+script = ExtResource( 16 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover/TxtPanelScore/TexMedal/SprSparkle"]
-anims/shine = SubResource( 12 )
+playback_speed = 0.8
+anims/shine = SubResource( 9 )
 
 [node name="HBoxButtons" type="HBoxContainer" parent="Hud/CntrGameover"]
 editor/display_folded = true
@@ -432,22 +464,22 @@ margin_right = 129.0
 margin_bottom = 189.0
 custom_constants/separation = 9
 alignment = 1
-script = SubResource( 7 )
+script = SubResource( 10 )
 
 [node name="BtnPlay" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_right = 52.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 16 )
-texture_pressed = ExtResource( 17 )
-script = SubResource( 4 )
+texture_normal = ExtResource( 17 )
+texture_pressed = ExtResource( 18 )
+script = SubResource( 11 )
 
 [node name="BtnScores" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_left = 61.0
 margin_right = 113.0
 margin_bottom = 29.0
-texture_normal = ExtResource( 18 )
-texture_pressed = ExtResource( 19 )
+texture_normal = ExtResource( 19 )
+texture_pressed = ExtResource( 20 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover"]
 playback_speed = 1.5
-anims/show = SubResource( 5 )
+anims/show = SubResource( 12 )

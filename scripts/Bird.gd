@@ -20,6 +20,10 @@ func _integrate_forces(_delta):
 func _input(event):
 	state.input(event)
 
+func _unhandled_input(event):
+	if state.has_method("unhandled_input"):
+		state.unhandled_input(event)
+
 func _on_body_enter(other_body):
 	if state.has_method("on_body_enter"):
 		state.on_body_enter(other_body)
@@ -94,6 +98,13 @@ class FlappingState:
 	
 	func input(event):
 		if event.is_action_pressed("flap"):
+			flap()
+	
+	func unhandled_input(event):
+		if !(event is InputEventMouseButton) or !event.is_pressed():
+			return
+		
+		if event.button_index == BUTTON_LEFT:
 			flap()
 	
 	func on_body_enter(other_body):

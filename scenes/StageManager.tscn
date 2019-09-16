@@ -40,6 +40,7 @@ script = ExtResource( 1 )
 modulate = Color( 1, 1, 1, 0 )
 margin_right = 144.0
 margin_bottom = 256.0
+mouse_filter = 2
 texture = ExtResource( 2 )
 expand = true
 
