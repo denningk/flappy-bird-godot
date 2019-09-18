@@ -6,7 +6,7 @@ var is_changing : bool = false
 
 signal stage_changed
 	
-func change_staage(stage_path) -> void:
+func change_stage(stage_path) -> void:
 	if is_changing: return
 	
 	is_changing = true
