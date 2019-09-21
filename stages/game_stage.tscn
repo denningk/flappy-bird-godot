@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=2]
+[gd_scene load_steps=42 format=2]
 
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Bird.tscn" type="PackedScene" id=2]
@@ -23,6 +23,45 @@
 [ext_resource path="res://sprites/button_score_pressed.png" type="Texture" id=21]
 [ext_resource path="res://sprites/rect_black.png" type="Texture" id=22]
 [ext_resource path="res://sprites/button_resume.png" type="Texture" id=23]
+[ext_resource path="res://sprites/button_menu.png" type="Texture" id=24]
+
+[sub_resource type="GDScript" id=17]
+resource_name = "Shaker"
+script/source = "extends Node
+
+onready var camera = get_parent()
+
+var time = 0
+
+const duration = 0.18
+const magnitude = 3
+
+func _ready():
+	var bird = Utils.get_main_node().get_node(\"Bird\")
+	if bird: bird.connect(\"state_changed\", self, \"_on_bird_state_changed\")
+	
+func _on_bird_state_changed(bird):
+	if bird.get_state() in [bird.STATE_HIT, bird.STATE_GROUNDED]:
+		shake()
+		bird.disconnect(\"state_changed\", self, \"_on_bird_state_changed\")
+
+func shake():
+	var initial_offset = camera.offset
+	
+	while time < duration:
+		time += get_process_delta_time()
+		time = min(time, duration)
+		
+		var offset = Vector2()
+		offset.x = rand_range(-magnitude, magnitude)
+		offset.y = rand_range(-magnitude, magnitude)
+		camera.offset = initial_offset + offset
+		
+		yield(get_tree(), \"idle_frame\")
+		
+	time = 0
+	camera.offset = initial_offset
+	"
 
 [sub_resource type="GDScript" id=1]
 resource_name = "Btn_instructions"
@@ -68,7 +107,7 @@ func _on_score_current_changed() -> void:
 	set_number(Game.score_current)
 
 func _on_bird_state_changed(bird):
-	if bird.get_state() == bird.STATE_GROUNDED:
+	if bird.get_state() in [bird.STATE_HIT,bird.STATE_GROUNDED]:
 		hide()
 
 func set_number(number) -> void:
@@ -82,18 +121,25 @@ func set_number(number) -> void:
 		add_child(texture_frame)
 "
 
-[sub_resource type="GDScript" id=13]
+[sub_resource type="GDScript" id=3]
 resource_name = "BtnPause"
 script/source = "extends TextureButton
 
 func _ready():
 	connect(\"pressed\", self, \"_on_pressed\")
-
+	
+	var bird = Utils.get_main_node().get_node(\"Bird\")
+	if bird: bird.connect(\"state_changed\", self, \"_on_bird_state_changed\")
+	
 func _on_pressed():
-	get_tree().paused = true"
+	get_tree().paused = true
+	show()
+	
+func _on_bird_state_changed(bird):
+	if bird.get_state() in [bird.STATE_HIT,bird.STATE_GROUNDED]:
+		hide()"
 
-[sub_resource type="GDScript" id=3]
-resource_name = "CntrGameover"
+[sub_resource type="GDScript" id=4]
 script/source = "extends Container
 
 func _ready():
@@ -105,10 +151,10 @@ func _ready():
 
 func _on_bird_state_changed(bird):
 	if bird.get_state() == bird.STATE_GROUNDED:
-		$Anim.play(\"show\")"
+		$Anim.play(\"show\")
+		StageManager.play_sound(\"Swoosh\")"
 
-[sub_resource type="GDScript" id=4]
-resource_name = "HBoxScoreLast"
+[sub_resource type="GDScript" id=5]
 script/source = "extends HBoxContainer
 
 const SPRITE_NUMBERS : Array = [
@@ -157,8 +203,7 @@ func set_number(number: int) -> void:
 		add_child(texture_frame)
 "
 
-[sub_resource type="GDScript" id=5]
-resource_name = "HBoxScoreBest"
+[sub_resource type="GDScript" id=6]
 script/source = "extends HBoxContainer
 
 const SPRITE_NUMBERS : Array = [
@@ -191,16 +236,14 @@ func set_number(number: int) -> void:
 		add_child(texture_frame)
 "
 
-[sub_resource type="GDScript" id=6]
-resource_name = "TexNew"
+[sub_resource type="GDScript" id=7]
 script/source = "extends TextureRect
 
 func _ready():
 	hide()
 	Game.connect(\"score_best_changed\", self, \"show\")"
 
-[sub_resource type="GDScript" id=7]
-resource_name = "TexMedal"
+[sub_resource type="GDScript" id=8]
 script/source = "extends TextureRect
 
 const spr_medal_bronze = preload(\"res://sprites/medal_bronze.png\")
@@ -233,7 +276,7 @@ func show_medal():
 		show()
 		emit_signal(\"shown\")"
 
-[sub_resource type="SpriteFrames" id=8]
+[sub_resource type="SpriteFrames" id=9]
 animations = [ {
 "frames": [ ExtResource( 14 ), ExtResource( 15 ), ExtResource( 16 ) ],
 "loop": true,
@@ -241,8 +284,7 @@ animations = [ {
 "speed": 5.0
 } ]
 
-[sub_resource type="Animation" id=9]
-resource_name = "shine"
+[sub_resource type="Animation" id=10]
 length = 0.5
 loop = true
 tracks/0/type = "value"
@@ -272,7 +314,7 @@ tracks/1/keys = {
 } ]
 }
 
-[sub_resource type="GDScript" id=10]
+[sub_resource type="GDScript" id=11]
 script/source = "extends HBoxContainer
 
 func _ready():
@@ -282,7 +324,7 @@ func _ready():
 	if hbox_score_last:
 		hbox_score_last.connect(\"counting_finished\", self, \"show\")"
 
-[sub_resource type="GDScript" id=11]
+[sub_resource type="GDScript" id=12]
 script/source = "extends TextureButton
 
 func _ready():
@@ -295,7 +337,7 @@ func _on_pressed():
 	StageManager.change_stage(StageManager.STAGE_GAME)
 "
 
-[sub_resource type="Animation" id=12]
+[sub_resource type="Animation" id=13]
 tracks/0/type = "value"
 tracks/0/path = NodePath(".:visible")
 tracks/0/interp = 1
@@ -376,6 +418,18 @@ func _on_pressed():
 	get_tree().paused = false
 	show()"
 
+[sub_resource type="GDScript" id=16]
+resource_name = "BtnMenu"
+script/source = "extends TextureButton
+
+func _ready():
+	connect(\"pressed\", self, \"_on_pressed\")
+	
+func _on_pressed():
+	StageManager.change_stage(StageManager.STAGE_MENU)
+	get_tree().paused = false
+	"
+
 [node name="World" type="Node"]
 
 [node name="Camera" type="Camera2D" parent="."]
@@ -383,6 +437,9 @@ offset = Vector2( -36, 0 )
 anchor_mode = 0
 current = true
 script = ExtResource( 1 )
+
+[node name="Shaker" type="Node" parent="Camera"]
+script = SubResource( 17 )
 
 [node name="Bird" parent="." instance=ExtResource( 2 )]
 
@@ -431,14 +488,13 @@ margin_top = 10.0
 margin_right = 23.0
 margin_bottom = 24.0
 texture_normal = ExtResource( 8 )
-script = SubResource( 13 )
+script = SubResource( 3 )
 
 [node name="CntrGameover" type="Container" parent="Hud"]
-editor/display_folded = true
 visible = false
 margin_right = 144.0
 margin_bottom = 256.0
-script = SubResource( 3 )
+script = SubResource( 4 )
 
 [node name="TxtGameover" type="TextureRect" parent="Hud/CntrGameover"]
 margin_left = 24.0
@@ -463,7 +519,7 @@ margin_right = 102.0
 margin_bottom = 27.0
 custom_constants/separation = 1
 alignment = 2
-script = SubResource( 4 )
+script = SubResource( 5 )
 
 [node name="TexZero" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore/HBoxScoreLast"]
 margin_left = 33.0
@@ -479,7 +535,7 @@ margin_right = 102.0
 margin_bottom = 47.0
 custom_constants/separation = 1
 alignment = 2
-script = SubResource( 5 )
+script = SubResource( 6 )
 
 [node name="TexZero" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore/HBoxScoreBest"]
 margin_left = 33.0
@@ -493,7 +549,7 @@ margin_top = 29.0
 margin_right = 83.0
 margin_bottom = 36.0
 texture = ExtResource( 12 )
-script = SubResource( 6 )
+script = SubResource( 7 )
 
 [node name="TexMedal" type="TextureRect" parent="Hud/CntrGameover/TxtPanelScore"]
 margin_left = 13.0
@@ -501,17 +557,18 @@ margin_top = 21.0
 margin_right = 35.0
 margin_bottom = 43.0
 texture = ExtResource( 13 )
-script = SubResource( 7 )
+script = SubResource( 8 )
 
 [node name="SprSparkle" type="AnimatedSprite" parent="Hud/CntrGameover/TxtPanelScore/TexMedal"]
-frames = SubResource( 8 )
+frames = SubResource( 9 )
 script = ExtResource( 17 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover/TxtPanelScore/TexMedal/SprSparkle"]
 playback_speed = 0.8
-anims/shine = SubResource( 9 )
+anims/shine = SubResource( 10 )
 
 [node name="HBoxButtons" type="HBoxContainer" parent="Hud/CntrGameover"]
+editor/display_folded = true
 visible = false
 margin_left = 16.0
 margin_top = 160.0
@@ -519,14 +576,14 @@ margin_right = 129.0
 margin_bottom = 189.0
 custom_constants/separation = 9
 alignment = 1
-script = SubResource( 10 )
+script = SubResource( 11 )
 
 [node name="BtnPlay" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_right = 52.0
 margin_bottom = 29.0
 texture_normal = ExtResource( 18 )
 texture_pressed = ExtResource( 19 )
-script = SubResource( 11 )
+script = SubResource( 12 )
 
 [node name="BtnScores" type="TextureButton" parent="Hud/CntrGameover/HBoxButtons"]
 margin_left = 61.0
@@ -537,7 +594,7 @@ texture_pressed = ExtResource( 21 )
 
 [node name="Anim" type="AnimationPlayer" parent="Hud/CntrGameover"]
 playback_speed = 1.5
-anims/show = SubResource( 12 )
+anims/show = SubResource( 13 )
 
 [node name="CntrPause" type="Container" parent="Hud"]
 pause_mode = 2
@@ -555,7 +612,15 @@ expand = true
 [node name="BtnResume" type="TextureButton" parent="Hud/CntrPause"]
 margin_left = 10.0
 margin_top = 10.0
-margin_right = 50.0
-margin_bottom = 50.0
+margin_right = 23.0
+margin_bottom = 24.0
 texture_normal = ExtResource( 23 )
 script = SubResource( 15 )
+
+[node name="BtnMenu" type="TextureButton" parent="Hud/CntrPause"]
+margin_left = 52.0
+margin_top = 121.0
+margin_right = 92.0
+margin_bottom = 135.0
+texture_normal = ExtResource( 24 )
+script = SubResource( 16 )
