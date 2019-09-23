@@ -15,7 +15,7 @@ _global_script_class_icons={
 
 [application]
 
-config/name="Flappy Bird"
+config/name="FlappyBird"
 run/main_scene="res://stages/MainMenu.tscn"
 config/icon="res://icon.png"
 
