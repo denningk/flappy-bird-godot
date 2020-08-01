@@ -38,7 +38,6 @@ position = Vector2( 72, 110 )
 [node name="Background" parent="." instance=ExtResource( 4 )]
 
 [node name="HUD" type="CanvasLayer" parent="."]
-editor/display_folded = true
 
 [node name="TexFlappyBird" type="TextureRect" parent="HUD"]
 margin_left = 28.0
@@ -56,7 +55,6 @@ texture_normal = ExtResource( 6 )
 texture_pressed = ExtResource( 7 )
 
 [node name="HBoxButtons" type="HBoxContainer" parent="HUD"]
-editor/display_folded = true
 margin_left = 16.0
 margin_top = 160.0
 margin_right = 129.0
